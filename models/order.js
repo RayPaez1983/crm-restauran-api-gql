@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const OrderSchema = new mongoose.Schema({
   order: {
@@ -12,16 +12,16 @@ const OrderSchema = new mongoose.Schema({
   client: {
     type: mongoose.Schema.Types.ObjectId,
     require: true,
-    ref: "Client",
+    ref: 'Client',
   },
   waiter: {
     type: mongoose.Schema.Types.ObjectId,
     require: true,
-    ref: "User",
+    ref: 'User',
   },
   state: {
     type: String,
-    default: "Pending",
+    default: 'PENDING',
   },
   created: {
     type: Date,
@@ -29,4 +29,4 @@ const OrderSchema = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.model("Order", OrderSchema);
+module.exports = mongoose.model('Order', OrderSchema);

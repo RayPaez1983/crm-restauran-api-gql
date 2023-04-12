@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const DishSchema = new mongoose.Schema({
   dishName: {
@@ -32,5 +32,5 @@ const DishSchema = new mongoose.Schema({
     default: Date.now(),
   },
 });
-
-module.exports = mongoose.model("Dish", DishSchema);
+DishSchema.index({ dishName: 'text' });
+module.exports = mongoose.model('Dish', DishSchema);
