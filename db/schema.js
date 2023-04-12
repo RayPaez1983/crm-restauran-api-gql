@@ -1,4 +1,4 @@
-const { gql } = require("apollo-server");
+const { gql } = require('apollo-server');
 
 const typeDefs = gql`
   type User {
@@ -40,14 +40,19 @@ const typeDefs = gql`
     order: [OrderGroup]
     total: Float
     client: ID
+    waiter: ID
     created: String
     state: OrderState
-    waiter: ID
   }
 
   type TopClient {
     total: Float
-    client: [Client]
+    client: [User]
+  }
+
+  type TopWaiter {
+    total: Float
+    waiter: [Client]
   }
 
   input userInput {
@@ -88,10 +93,10 @@ const typeDefs = gql`
     id: ID
     quantity: Int
   }
-  input orderInput {
+  input OrderInput {
     order: [OrderGroupInput]
-    total: Float
-    client: ID
+    total: Float!
+    client: ID!
     state: OrderState
   }
   enum OrderState {
@@ -101,14 +106,14 @@ const typeDefs = gql`
   }
 
   type Query {
-    getUser: User
+    getUser(token: String!): User
 
     getMenu: [Dish]
     getDish(id: ID!): Dish
 
     getClients: [Client]
     getClientUser: [Client]
-    getClient(id: ID!): [Client]
+    getClient(id: ID!): Client
 
     getOrders: [Order]
     getOrdersUser: [Order]
@@ -116,6 +121,8 @@ const typeDefs = gql`
     getOrderState(state: String!): [Order]
 
     bestClients: [TopClient]
+    bestWaiter: [TopWaiter]
+    searchDish(text: String!): [Dish]
   }
   type Mutation {
     #products
@@ -130,8 +137,8 @@ const typeDefs = gql`
     updateClient(id: ID!, input: clientInput): Client
     deleteClient(id: ID!): String
 
-    newOrder(input: orderInput): Order
-    updateOrder(id: ID!, input: orderInput): Order
+    newOrder(input: OrderInput): Order
+    updateOrder(id: ID!, input: OrderInput): Order
     deleteOrder(id: ID!): String
   }
 `;

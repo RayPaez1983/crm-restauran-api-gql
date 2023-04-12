@@ -1,11 +1,11 @@
-const User = require("../models/user");
-const Dish = require("../models/dishModel");
-const Client = require("../models/clients");
-const Order = require("../models/order");
+const User = require('../models/user');
+const Dish = require('../models/dishModel');
+const Client = require('../models/clients');
+const Order = require('../models/order');
 
-const bcryptjs = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-require("dotenv").config();
+const bcryptjs = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+require('dotenv').config();
 
 const createToken = (user, secretWord, expiresIn) => {
   const { id, email, name, lastname } = user;
@@ -14,9 +14,9 @@ const createToken = (user, secretWord, expiresIn) => {
 
 const resolvers = {
   Query: {
-    getUser: async (_, {}, context) => {
-      console.log(context.user, "context");
-      return context.user;
+    getUser: async (_, { token }) => {
+      const userId = await jwt.verify(token, process.env.SECRET_WORD);
+      return userId;
     },
     getMenu: async () => {
       try {
@@ -29,7 +29,7 @@ const resolvers = {
     getDish: async (_, { id }) => {
       const dishId = await Dish.findById(id);
       if (!dishId) {
-        throw new Error("Dish does not exists");
+        throw new Error('Dish does not exists');
       }
       return dishId;
     },
@@ -42,7 +42,7 @@ const resolvers = {
       }
     },
     getClientUser: async (_, {}, context) => {
-      console.log(context, "ctx");
+      console.log(context, 'ctx');
       try {
         const clients = await Client.find({
           waiter: context.user.id.toString(),
@@ -54,13 +54,13 @@ const resolvers = {
     },
     getClient: async (_, { id }, context) => {
       const client = await Client.findById(id);
-      console.log(id, client, "info here");
+      console.log(id, client.waiter.toString(), 'info here', context.user.id);
 
       if (!client) {
-        throw new Error("Client does not exists");
+        throw new Error('Client does not exists');
       }
       if (client.waiter.toString() !== context.user.id) {
-        throw new Error("Check your credentials");
+        throw new Error('Check your credentials');
       }
       return client;
     },
@@ -74,12 +74,12 @@ const resolvers = {
     },
     getOrder: async (_, { id }, context) => {
       const order = await Order.findById(id);
-      console.log("get order:", order);
+      console.log('get order:', order);
       if (!order) {
-        throw new Error("Order does not exists");
+        throw new Error('Order does not exists');
       }
       if (order.waiter.toString() !== context.user.id) {
-        throw new Error("Check your credentials");
+        throw new Error('Check your credentials');
       }
       return order;
     },
@@ -100,25 +100,61 @@ const resolvers = {
       return orders;
     },
     bestClients: async () => {
+      console.log(Order);
       const clients = await Order.aggregate([
-        { $match: { state: "COMPLETED" } },
+        { $match: { state: 'COMPLETED' } },
         {
           $group: {
-            _id: "$client",
-            total: { $sum: "$total" },
+            _id: '$client',
+            total: { $sum: '$total' },
           },
         },
         {
           $lookup: {
-            from: "clients",
-            localField: "_id",
-            foreingField: "id",
-            as: "client",
+            from: 'clients',
+            localField: '_id',
+            foreignField: '_id',
+            as: 'client',
           },
         },
       ]);
 
       return clients;
+    },
+    bestWaiter: async () => {
+      const waiters = await Order.aggregate([
+        { $match: { state: 'COMPLETED' } },
+        {
+          $group: {
+            _id: '$waiter',
+            total: { $sum: '$total' },
+          },
+        },
+        {
+          $lookup: {
+            from: 'users',
+            localField: '_id',
+            foreignField: '_id',
+            as: 'waiter',
+          },
+        },
+        {
+          $limit: 3,
+        },
+        {
+          $sort: { total: -1 },
+        },
+      ]);
+
+      return waiters;
+    },
+    searchDish: async (_, { text }) => {
+      const dishes = await Dish.find({
+        $text: {
+          $search: text,
+        },
+      });
+      return dishes;
     },
   },
 
@@ -129,12 +165,12 @@ const resolvers = {
       //check if client exists
       let clientExists = await Client.findById(client);
       if (!clientExists) {
-        throw new Error("Client does not exist");
+        throw new Error('Client does not exist');
       }
 
       //Check if the user owns the client
       if (clientExists.waiter.toString() !== context.user.id) {
-        throw new Error("Check your credentials");
+        throw new Error('Check your credentials');
       }
       // // Check if there is enough dish in the stock
 
@@ -170,7 +206,7 @@ const resolvers = {
 
       const UserExists = await User.findOne({ email });
       if (UserExists) {
-        throw new Error("the user already exists");
+        throw new Error('the user already exists');
       }
 
       // hash the passsword
@@ -201,19 +237,19 @@ const resolvers = {
         userExists.password
       );
       if (!correctPassword) {
-        throw new Error("Wrong password");
+        throw new Error('Wrong password');
       }
       // create the token
       return {
-        token: createToken(userExists, process.env.SECRET_WORD, "24h"),
+        token: createToken(userExists, process.env.SECRET_WORD, '24h'),
       };
     },
     newDish: async (_, { input }) => {
-      console.log(input, "que pasa aqui");
+      console.log(input, 'que pasa aqui');
       const { dishName } = input;
       const dishExists = await Dish.findOne({ dishName });
       if (dishExists) {
-        throw new Error("Dish already exist");
+        throw new Error('Dish already exist');
       }
       try {
         const dish = new Dish(input);
@@ -228,7 +264,7 @@ const resolvers = {
       let dish = await Dish.findById(id);
 
       if (!dish) {
-        throw new Error("Dish does not exist");
+        throw new Error('Dish does not exist');
       }
 
       // guardarlo en la base de datos
@@ -241,18 +277,18 @@ const resolvers = {
       let dishDelete = await Dish.findById(id);
 
       if (!dishDelete) {
-        throw new Error("Dish does not exist");
+        throw new Error('Dish does not exist');
       }
       await dishDelete.deleteOne({ _id: id });
 
-      return "Dish Delete Succesfull";
+      return 'Dish Delete Succesfull';
     },
     newClient: async (_, { input }, context) => {
-      console.log(context, "here the contex", input);
+      console.log(context, 'here the contex', input);
       const { email } = input;
       const client = await Client.findOne({ email });
       if (client) {
-        throw new Error("client already exist");
+        throw new Error('client already exist');
       }
       const NewClient = new Client(input);
       NewClient.waiter = context.user.id;
@@ -267,11 +303,11 @@ const resolvers = {
       //check if the client exist or not
       let client = await Client.findById(id);
       if (!client) {
-        throw new Error("Client does not exist");
+        throw new Error('Client does not exist');
       }
       //check if the user is the client owner
       if (client.waiter.toString() !== context.user.id) {
-        throw new Error("Check your credentials");
+        throw new Error('Check your credentials');
       }
       // save the client
       client = await Client.findOneAndUpdate({ _id: id }, input, {
@@ -282,13 +318,13 @@ const resolvers = {
     deleteClient: async (_, { id }, context) => {
       let client = await Client.findById(id);
       if (!client) {
-        throw new Error("Client does not exist");
+        throw new Error('Client does not exist');
       }
       if (client.waiter.toString() !== context.user.id) {
-        throw new Error("Check your credentials");
+        throw new Error('Check your credentials');
       }
       client = await Client.findOneAndDelete({ _id: id });
-      return "Client was deleted";
+      return 'Client was deleted';
     },
     updateOrder: async (_, { id, input }, context) => {
       console.log(id);
@@ -296,17 +332,17 @@ const resolvers = {
       //check if the order exits
       const orderExist = await Order.findById(id);
       if (!orderExist) {
-        throw new Error("Order does not exist");
+        throw new Error('Order does not exist');
       }
       // check if client exist
       const clientExist = await Client.findById(client);
       if (!clientExist) {
-        throw new Error("Client does not exist");
+        throw new Error('Client does not exist');
       }
 
       //check if the waiter owns the order and the client
       if (clientExist.waiter.toString() !== context.user.id) {
-        throw new Error("Check your credentials");
+        throw new Error('Check your credentials');
       }
       // Check if there is enough dish in the stock
       if (input.order) {
@@ -334,13 +370,13 @@ const resolvers = {
     deleteOrder: async (_, { id }, context) => {
       let order = await Order.findById(id);
       if (!order) {
-        throw new Error("Order does not exist");
+        throw new Error('Order does not exist');
       }
       if (order.waiter.toString() !== context.user.id) {
-        throw new Error("Check your credentials");
+        throw new Error('Check your credentials');
       }
       await Order.findOneAndDelete({ _id: id });
-      return "Order was deleted";
+      return 'Order was deleted';
     },
   },
 };
