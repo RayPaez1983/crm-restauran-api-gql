@@ -1,9 +1,9 @@
-const { ApolloServer } = require("apollo-server");
-const typeDefs = require("./db/schema");
-const resolvers = require("./db/resolvers");
-const jwt = require("jsonwebtoken");
-const connectDB = require("./config/db");
-require("dotenv").config();
+const { ApolloServer } = require('apollo-server');
+const typeDefs = require('./db/schema');
+const resolvers = require('./db/resolvers');
+const jwt = require('jsonwebtoken');
+const connectDB = require('./config/db');
+require('dotenv').config();
 
 //connect to the data base
 connectDB();
@@ -12,11 +12,11 @@ const server = new ApolloServer({
   typeDefs,
   resolvers,
   context: ({ req }) => {
-    const token = req.headers["authorization"] || "";
+    const token = req.headers['authorization'] || '';
     if (token) {
       try {
         const user = jwt.verify(
-          token.replace("Bearer", ""),
+          token.replace('Bearer', ''),
           process.env.SECRET_WORD
         );
         return {

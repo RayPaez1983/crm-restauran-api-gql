@@ -41,6 +41,14 @@ const resolvers = {
         console.log(error);
       }
     },
+    getUsers: async () => {
+      try {
+        const users = await User.find({});
+        return users;
+      } catch (error) {
+        console.log(error);
+      }
+    },
     getClientUser: async (_, {}, context) => {
       console.log(context, 'ctx');
       try {
@@ -324,6 +332,14 @@ const resolvers = {
         throw new Error('Check your credentials');
       }
       client = await Client.findOneAndDelete({ _id: id });
+      return 'Client was deleted';
+    },
+    deleteUser: async (_, { id }) => {
+      let user = await User.findById(id);
+      if (!user) {
+        throw new Error('User does not exist');
+      }
+      user = await User.findOneAndDelete({ _id: id });
       return 'Client was deleted';
     },
     updateOrder: async (_, { id, input }, context) => {

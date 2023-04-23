@@ -107,6 +107,7 @@ const typeDefs = gql`
 
   type Query {
     getUser(token: String!): User
+    getUsers: [User]
 
     getMenu: [Dish]
     getDish(id: ID!): Dish
@@ -136,6 +137,7 @@ const typeDefs = gql`
     newClient(input: clientInput): Client
     updateClient(id: ID!, input: clientInput): Client
     deleteClient(id: ID!): String
+    deleteUser(id: ID!): String
 
     newOrder(input: OrderInput): Order
     updateOrder(id: ID!, input: OrderInput): Order
