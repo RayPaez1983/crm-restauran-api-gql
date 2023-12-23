@@ -9,7 +9,12 @@ require('dotenv').config();
 
 const createToken = (user, secretWord, expiresIn) => {
   const { id, email, name, lastname } = user;
-  return jwt.sign({ id, email, name, lastname }, secretWord, { expiresIn });
+  return jwt.sign(
+    { id, email, name, lastname },
+    secretWord,
+    { expiresIn },
+    { algorithm: 'HS256' }
+  );
 };
 
 const resolvers = {
@@ -53,7 +58,7 @@ const resolvers = {
       console.log(context, 'ctx');
       try {
         const clients = await Client.find({
-          waiter: context.user.id.toString(),
+          user: context.user.id.toString(),
         });
         return clients;
       } catch (error) {
@@ -62,12 +67,12 @@ const resolvers = {
     },
     getClient: async (_, { id }, context) => {
       const client = await Client.findById(id);
-      console.log(id, client.waiter.toString(), 'info here', context.user.id);
+      console.log(id, client, 'info here', context);
 
       if (!client) {
         throw new Error('Client does not exists');
       }
-      if (client.waiter.toString() !== context.user.id) {
+      if (client.user.toString() !== context.user.id) {
         throw new Error('Check your credentials');
       }
       return client;
@@ -82,11 +87,11 @@ const resolvers = {
     },
     getOrder: async (_, { id }, context) => {
       const order = await Order.findById(id);
-      console.log('get order:', order);
+      console.log('get order:', order, context);
       if (!order) {
         throw new Error('Order does not exists');
       }
-      if (order.waiter.toString() !== context.user.id) {
+      if (!order) {
         throw new Error('Check your credentials');
       }
       return order;
@@ -94,7 +99,7 @@ const resolvers = {
     getOrdersUser: async (_, {}, context) => {
       console.log(context);
       try {
-        const order = await Order.find({ waiter: context.user.id });
+        const order = await Order.find({ user: context.user.id });
         return order;
       } catch (error) {
         console.log(error);
@@ -102,7 +107,7 @@ const resolvers = {
     },
     getOrderState: async (_, { state }, context) => {
       const orders = await Order.find({
-        waiter: context.user.id,
+        user: context.user.id,
         state,
       });
       return orders;
@@ -129,12 +134,12 @@ const resolvers = {
 
       return clients;
     },
-    bestWaiter: async () => {
-      const waiters = await Order.aggregate([
+    bestuser: async () => {
+      const users = await Order.aggregate([
         { $match: { state: 'COMPLETED' } },
         {
           $group: {
-            _id: '$waiter',
+            _id: '$user',
             total: { $sum: '$total' },
           },
         },
@@ -143,7 +148,7 @@ const resolvers = {
             from: 'users',
             localField: '_id',
             foreignField: '_id',
-            as: 'waiter',
+            as: 'user',
           },
         },
         {
@@ -154,7 +159,7 @@ const resolvers = {
         },
       ]);
 
-      return waiters;
+      return users;
     },
     searchDish: async (_, { text }) => {
       const dishes = await Dish.find({
@@ -169,7 +174,7 @@ const resolvers = {
   Mutation: {
     newOrder: async (_, { input }, context) => {
       const { client } = input;
-      console.log(input);
+      console.log('que grandoblehijodeputas pasa aqui', context);
       //check if client exists
       let clientExists = await Client.findById(client);
       if (!clientExists) {
@@ -177,9 +182,7 @@ const resolvers = {
       }
 
       //Check if the user owns the client
-      if (clientExists.waiter.toString() !== context.user.id) {
-        throw new Error('Check your credentials');
-      }
+
       // // Check if there is enough dish in the stock
 
       for await (const item of input.order) {
@@ -198,9 +201,7 @@ const resolvers = {
       //create new order
       const newOrderDish = new Order(input);
 
-      //assing a waiter
-
-      newOrderDish.waiter = context.user.id;
+      //assing a user
 
       //save in the dataBase
 
@@ -249,7 +250,7 @@ const resolvers = {
       }
       // create the token
       return {
-        token: createToken(userExists, process.env.SECRET_WORD, '24h'),
+        token: createToken(userExists, process.env.SECRET_WORD),
       };
     },
     newDish: async (_, { input }) => {
@@ -299,7 +300,7 @@ const resolvers = {
         throw new Error('client already exist');
       }
       const NewClient = new Client(input);
-      NewClient.waiter = context.user.id;
+      NewClient.user = context.user.id;
       try {
         const result = await NewClient.save();
         return result;
@@ -314,7 +315,7 @@ const resolvers = {
         throw new Error('Client does not exist');
       }
       //check if the user is the client owner
-      if (client.waiter.toString() !== context.user.id) {
+      if (client.user.toString() !== context.user.id) {
         throw new Error('Check your credentials');
       }
       // save the client
@@ -328,7 +329,7 @@ const resolvers = {
       if (!client) {
         throw new Error('Client does not exist');
       }
-      if (client.waiter.toString() !== context.user.id) {
+      if (client.user.toString() !== context.user.id) {
         throw new Error('Check your credentials');
       }
       client = await Client.findOneAndDelete({ _id: id });
@@ -356,8 +357,8 @@ const resolvers = {
         throw new Error('Client does not exist');
       }
 
-      //check if the waiter owns the order and the client
-      if (clientExist.waiter.toString() !== context.user.id) {
+      //check if the user owns the order and the client
+      if (clientExist.user.toString() !== context.user.id) {
         throw new Error('Check your credentials');
       }
       // Check if there is enough dish in the stock
@@ -388,7 +389,7 @@ const resolvers = {
       if (!order) {
         throw new Error('Order does not exist');
       }
-      if (order.waiter.toString() !== context.user.id) {
+      if (order.user.toString() !== context.user.id) {
         throw new Error('Check your credentials');
       }
       await Order.findOneAndDelete({ _id: id });

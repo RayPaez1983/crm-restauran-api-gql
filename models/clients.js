@@ -30,10 +30,10 @@ const ClientSchema = new mongoose.Schema({
     type: Date,
     default: Date.now(),
   },
-  waiter: {
+  user: {
     type: mongoose.Schema.Types.ObjectId,
     require: true,
-    ref: "User",
+    ref: 'User',
   },
 });
 

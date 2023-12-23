@@ -5,6 +5,14 @@ const OrderSchema = new mongoose.Schema({
     type: Array,
     require: true,
   },
+  table: {
+    type: Number,
+    require: true,
+  },
+  persons: {
+    type: Number,
+    require: true,
+  },
   total: {
     type: Number,
     require: true,
@@ -14,11 +22,7 @@ const OrderSchema = new mongoose.Schema({
     require: true,
     ref: 'Client',
   },
-  waiter: {
-    type: mongoose.Schema.Types.ObjectId,
-    require: true,
-    ref: 'User',
-  },
+
   state: {
     type: String,
     default: 'PENDING',
@@ -26,6 +30,11 @@ const OrderSchema = new mongoose.Schema({
   created: {
     type: Date,
     default: Date.now(),
+  },
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    require: true,
+    ref: 'User',
   },
 });
 

@@ -23,6 +23,7 @@ const server = new ApolloServer({
           user,
         };
       } catch (error) {
+        console.log('Hubo un error');
         console.log(error);
       }
     }

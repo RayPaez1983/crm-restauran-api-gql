@@ -29,7 +29,7 @@ const typeDefs = gql`
     phoneNumber: String
     order: String
     created: String
-    waiter: ID
+    user: ID
   }
   type OrderGroup {
     id: ID
@@ -39,8 +39,10 @@ const typeDefs = gql`
     id: ID
     order: [OrderGroup]
     total: Float
+    table: Float
+    persons: Float
     client: ID
-    waiter: ID
+    user: ID
     created: String
     state: OrderState
   }
@@ -50,9 +52,9 @@ const typeDefs = gql`
     client: [User]
   }
 
-  type TopWaiter {
+  type Topuser {
     total: Float
-    waiter: [Client]
+    user: [Client]
   }
 
   input userInput {
@@ -93,12 +95,16 @@ const typeDefs = gql`
     id: ID
     quantity: Int
   }
+
   input OrderInput {
     order: [OrderGroupInput]
     total: Float!
+    table: Float!
+    persons: Float!
     client: ID!
     state: OrderState
   }
+
   enum OrderState {
     PENDING
     COMPLETED
@@ -122,7 +128,7 @@ const typeDefs = gql`
     getOrderState(state: String!): [Order]
 
     bestClients: [TopClient]
-    bestWaiter: [TopWaiter]
+    bestuser: [Topuser]
     searchDish(text: String!): [Dish]
   }
   type Mutation {
