@@ -12,8 +12,12 @@ const createToken = (user, secretWord, expiresIn) => {
   return jwt.sign(
     { id, email, name, lastname },
     secretWord,
-    { expiresIn },
-    { algorithm: 'HS256' }
+    {
+      algorithm: 'HS256',
+    },
+    {
+      expiresIn: '24h',
+    }
   );
 };
 
@@ -175,39 +179,69 @@ const resolvers = {
     newOrder: async (_, { input }, context) => {
       const { client } = input;
       console.log('que grandoblehijodeputas pasa aqui', context);
-      //check if client exists
+
+      // Check if client exists
       let clientExists = await Client.findById(client);
       if (!clientExists) {
         throw new Error('Client does not exist');
       }
 
-      //Check if the user owns the client
+      // Check if the user owns the client
 
-      // // Check if there is enough dish in the stock
+      // Check if there is enough dish in the stock
+      const insufficientStock = [];
+      const selectedDishIds = [];
 
       for await (const item of input.order) {
-        const { id } = item;
-        const plate = await Dish.findById(id);
-        if (item.quantity > plate.inStock) {
-          throw new Error(`The Dish: ${plate.dishName} is out of stock`);
-        } else {
-          //
-          plate.inStock = plate.inStock - item.quantity;
+        const { id, quantity } = item;
 
-          await plate.save();
+        // Check if the dish has enough stock
+        const plate = await Dish.findById(id);
+        if (!plate || quantity > plate.inStock) {
+          insufficientStock.push(plate?.dishName || 'Unknown Dish');
         }
+
+        // Check if the dish has already been included in this order
+        if (selectedDishIds.includes(id)) {
+          throw new Error(`Dish with ID ${id} is duplicated in the order`);
+        }
+
+        selectedDishIds.push(id);
       }
 
-      //create new order
+      if (insufficientStock.length > 0) {
+        throw new Error(
+          `The following dishes are out of stock: ${insufficientStock.join(
+            ', '
+          )}`
+        );
+      }
+
+      // Create new order
       const newOrderDish = new Order(input);
 
-      //assing a user
+      // Assign a user
 
-      //save in the dataBase
+      // Save in the database
+      try {
+        await newOrderDish.save();
 
-      const result = await newOrderDish.save();
-      return result;
+        // If the order is successfully saved, update the stock
+        for await (const item of input.order) {
+          const { id, quantity } = item;
+          const plate = await Dish.findById(id);
+          plate.inStock -= quantity;
+          await plate.save();
+        }
+
+        console.log('Order and stock updated successfully');
+        return newOrderDish;
+      } catch (error) {
+        console.error('Error saving order:', error);
+        throw new Error('Failed to create a new order');
+      }
     },
+
     newUser: async (_, { input }) => {
       const { email, password } = input;
 
@@ -389,9 +423,7 @@ const resolvers = {
       if (!order) {
         throw new Error('Order does not exist');
       }
-      if (order.user.toString() !== context.user.id) {
-        throw new Error('Check your credentials');
-      }
+
       await Order.findOneAndDelete({ _id: id });
       return 'Order was deleted';
     },
