@@ -2,6 +2,7 @@ const User = require('../models/user');
 const Dish = require('../models/dishModel');
 const Client = require('../models/clients');
 const Order = require('../models/order');
+const Todo = require('../models/toDo');
 
 const bcryptjs = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -85,6 +86,14 @@ const resolvers = {
       try {
         const order = await Order.find({});
         return order;
+      } catch (error) {
+        console.log(error);
+      }
+    },
+    getTodos: async () => {
+      try {
+        const todo = await Todo.find({});
+        return todo;
       } catch (error) {
         console.log(error);
       }
@@ -264,6 +273,30 @@ const resolvers = {
       } catch (error) {
         console.log(error);
       }
+    },
+
+    newTodo: async (_, { input }) => {
+      const { id, text, complete } = input;
+      console.log(id, text, complete);
+
+      try {
+        const todo = new Todo(input);
+        todo.save(); // save in the db
+        return todo;
+      } catch (error) {
+        console.log(error);
+      }
+    },
+    deleteTodo: async (_, { id }) => {
+      // revisar si el producto existe o no
+      let toDoDelete = await Todo.findById(id);
+
+      if (!toDoDelete) {
+        throw new Error('Todo does not exist');
+      }
+      await toDoDelete.deleteOne({ _id: id });
+
+      return 'Todo Delete Succesfull';
     },
     authUser: async (_, { input }) => {
       const { email, password } = input;

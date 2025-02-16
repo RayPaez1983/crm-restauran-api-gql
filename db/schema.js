@@ -57,6 +57,12 @@ const typeDefs = gql`
     user: [Client]
   }
 
+  type Todo {
+    id: ID
+    text: String!
+    complete: Boolean!
+  }
+
   input userInput {
     name: String!
     lastname: String!
@@ -89,6 +95,11 @@ const typeDefs = gql`
     email: String!
     phoneNumber: String
     order: String!
+  }
+
+  input TodoInput {
+    text: String!
+    complete: Boolean!
   }
 
   input OrderGroupInput {
@@ -130,6 +141,8 @@ const typeDefs = gql`
     bestClients: [TopClient]
     bestuser: [Topuser]
     searchDish(text: String!): [Dish]
+
+    getTodos: [Todo]
   }
   type Mutation {
     #products
@@ -148,6 +161,10 @@ const typeDefs = gql`
     newOrder(input: OrderInput): Order
     updateOrder(id: ID!, input: OrderInput): Order
     deleteOrder(id: ID!): String
+
+    newTodo(input: TodoInput): Todo
+    updateTodo(id: ID!, input: TodoInput): Todo
+    deleteTodo(id: ID!): String
   }
 `;
 module.exports = typeDefs;
