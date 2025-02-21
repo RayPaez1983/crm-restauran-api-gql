@@ -298,6 +298,19 @@ const resolvers = {
 
       return 'Todo Delete Succesfull';
     },
+    updateTodo: async (_, { id, input }) => {
+      // revisar si el producto existe o no
+      let todo = await Todo.findById(id);
+
+      if (!todo) {
+        throw new Error('Todo does not exist');
+      }
+
+      // guardarlo en la base de datos
+      todo = await Todo.findOneAndUpdate({ _id: id }, input, { new: true });
+      console.log(todo);
+      return todo;
+    },
     authUser: async (_, { input }) => {
       const { email, password } = input;
       // verify if email exists
